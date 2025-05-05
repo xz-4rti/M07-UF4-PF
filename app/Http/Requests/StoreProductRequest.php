@@ -6,23 +6,18 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreProductRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
+    public function authorize()
     {
-        // You can also check roles here if needed
-        return true;
+        return true;  // Change this to 'true' if you want to allow all users to create a product.
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     */
-    public function rules(): array
+    public function rules()
     {
         return [
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'description' => 'required|string',
+            'price' => 'required|numeric',
+            'stock' => 'required|integer',
         ];
     }
 }
