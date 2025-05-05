@@ -1,7 +1,8 @@
 <template>
   <div>
-    <h2>Product List</h2>
-    <table border="1" cellpadding="5">
+    <h1>Product List</h1>
+    <p v-if="loading">Loading...</p>
+    <table v-if="!loading">
       <thead>
         <tr>
           <th @click="sortBy('name')">Name</th>
@@ -16,107 +17,68 @@
           <td>{{ product.price }}</td>
           <td>{{ product.description }}</td>
           <td v-if="isAdmin">
-            <button @click="editProduct(product)">Edit</button>
             <button @click="deleteProduct(product.id)">Delete</button>
           </td>
         </tr>
       </tbody>
     </table>
-
-    <div v-if="isAdmin">
-      <h3>{{ form.id ? 'Edit' : 'Create' }} Product</h3>
-      <form @submit.prevent="saveProduct">
-        <input v-model="form.name" placeholder="Name" required />
-        <input v-model="form.price" placeholder="Price" type="number" required />
-        <textarea v-model="form.description" placeholder="Description"></textarea>
-        <button type="submit">Save</button>
-      </form>
-    </div>
   </div>
 </template>
 
-<script>
-import axios from 'axios';
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 
-export default {
-  data() {
-    return {
-      products: [],
-      sortKey: 'name',
-      sortAsc: true,
-      form: {
-        id: null,
-        name: '',
-        price: '',
-        description: ''
-      },
-      isAdmin: false
-    };
-  },
-  computed: {
-    sortedProducts() {
-      return [...this.products].sort((a, b) => {
-        const modifier = this.sortAsc ? 1 : -1;
-        return a[this.sortKey] > b[this.sortKey] ? modifier : -modifier;
-      });
-    }
-  },
-  methods: {
-    async fetchUserRole() {
-      try {
-        const response = await axios.get('/api/user', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        this.isAdmin = response.data.role === 'admin';
-      } catch (err) {
-        console.error(err);
-      }
-    },
-    async fetchProducts() {
-      const response = await axios.get('/api/products');
-      this.products = response.data;
-    },
-    async saveProduct() {
-      const headers = {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      };
-      try {
-        if (this.form.id) {
-          // update
-          await axios.put(`/api/products/${this.form.id}`, this.form, { headers });
-        } else {
-          // create
-          await axios.post('/api/products', this.form, { headers });
-        }
-        this.form = { id: null, name: '', price: '', description: '' };
-        this.fetchProducts();
-      } catch (err) {
-        console.error('Save failed', err.response?.data);
-      }
-    },
-    editProduct(product) {
-      this.form = { ...product };
-    },
-    async deleteProduct(id) {
-      if (!confirm('Are you sure?')) return;
-      const headers = {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      };
-      try {
-        await axios.delete(`/api/products/${id}`, { headers });
-        this.fetchProducts();
-      } catch (err) {
-        console.error('Delete failed', err.response?.data);
-      }
-    },
-    sortBy(key) {
-      this.sortAsc = this.sortKey === key ? !this.sortAsc : true;
-      this.sortKey = key;
-    }
-  },
-  mounted() {
-    this.fetchUserRole();
-    this.fetchProducts();
+const products = ref([])
+const loading = ref(true)
+const sortKey = ref('name')
+const sortAsc = ref(true)
+const isAdmin = ref(false)
+
+const sortedProducts = computed(() => {
+  return [...products.value].sort((a, b) => {
+    if (a[sortKey.value] < b[sortKey.value]) return sortAsc.value ? -1 : 1
+    if (a[sortKey.value] > b[sortKey.value]) return sortAsc.value ? 1 : -1
+    return 0
+  })
+})
+
+function sortBy(key) {
+  if (sortKey.value === key) sortAsc.value = !sortAsc.value
+  else sortKey.value = key
+}
+
+async function fetchProducts() {
+  try {
+    const res = await axios.get('/api/products')
+    products.value = res.data
+  } catch (e) {
+    alert("Not authenticated or error fetching products.")
+  } finally {
+    loading.value = false
   }
-};
+}
+
+async function fetchUser() {
+  const res = await axios.get('/api/user')
+  isAdmin.value = res.data.role === 'admin'
+}
+
+async function deleteProduct(id) {
+  if (confirm('Are you sure?')) {
+    await axios.delete(`/api/products/${id}`)
+    products.value = products.value.filter(p => p.id !== id)
+  }
+}
+
+onMounted(() => {
+  fetchUser()
+  fetchProducts()
+})
 </script>
+
+<style scoped>
+th {
+  cursor: pointer;
+}
+</style>

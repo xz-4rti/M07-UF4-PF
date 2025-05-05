@@ -1,12 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Login</title>
-    @vite('resources/js/app.js')
 </head>
 <body>
-    <div id="app">
-        <login-form></login-form>
-    </div>
+    <h1>Login</h1>
+
+    <form method="POST" action="/api/login">
+        @csrf
+        <input type="email" name="email" placeholder="Email" required><br>
+        <input type="password" name="password" placeholder="Password" required><br>
+        <button type="submit">Login</button>
+    </form>
 </body>
 </html>
