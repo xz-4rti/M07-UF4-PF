@@ -36,11 +36,7 @@ use Illuminate\Support\Facades\Log;
  */
 class ProductController extends Controller
 {
-    public function __construct()
-    {
-        // Apply the 'admin' middleware to the store, update, and destroy methods
-        $this->middleware('admin')->only(['store', 'update', 'destroy']);
-    }
+
     // GET /api/products
     /**
      * @OA\Get(

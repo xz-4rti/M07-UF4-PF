@@ -15,7 +15,7 @@ class AdminMiddleware
         $user = $request->user(); // Get the authenticated user
 
         // Check if user exists and if the user has the role of 'admin'
-        if (!$user || !$user->hasRole('admin')) {
+        if (!$user || !$user->role) {
             // Unauthorized response if user is not admin
             return response()->json(['error' => 'Unauthorized'], 403);
         }
